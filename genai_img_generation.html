@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .output-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 400px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            border-radius: 16px;
+            border: 2px dashed rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .output-section.has-image {
+            border-style: solid;
+            border-color: rgba(102, 126, 234, 0.3);
+            background: white;
+        }
+
+        .output-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #7f8c8d;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .output-placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .output-placeholder-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .output-placeholder-subtext {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            min-height: 100px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .size-selector {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            width: 100%;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 126, 234, 0.1);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            animation: progress-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes progress-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .loading-steps {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .step.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .step.completed {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .step-icon {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .step-text {
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .loading-tip {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .generated-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+            margin-bottom: 20px;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+
+        .image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .download-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+            display: none;
+        }
+
+        .download-btn:hover {
+            background: #219a52;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 0;
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        .example-prompts {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .example-prompts h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .prompt-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .prompt-tag:hover {
+            background: #5a67d8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .output-section {
+                min-height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .size-selector {
+                min-width: auto;
+            }
+
+            textarea {
+                min-height: 80px;
+            }
+            
+            .main-content {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .generate-btn {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+            
+            .main-content {
+                gap: 15px;
+            }
+            
+            .output-placeholder-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Image Generator</h1>
+        <p class="subtitle">Transform your ideas into stunning visuals with AI</p>
+        
+        <div class="main-content">
+            <!-- Input Section (Left) -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="promptInput">Describe your image:</label>
+                    <textarea id="promptInput" placeholder="A serene mountain landscape at sunrise with misty valleys and golden light..."></textarea>
+                </div>
+                
+                <div class="controls">
+                    <div class="size-selector">
+                        <label for="sizeSelect">Image Size:</label>
+                        <select id="sizeSelect">
+                            <option value="512x512">Square (512x512)</option>
+                            <option value="768x512">Landscape (768x512)</option>
+                            <option value="512x768">Portrait (512x768)</option>
+                            <option value="1024x1024">Large Square (1024x1024)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="generate-btn" id="generateBtn">
+                    Generate Image
+                </button>
+                
+                <div class="example-prompts">
+                    <h3>Try these example prompts:</h3>
+                    <span class="prompt-tag" onclick="setPrompt('A futuristic cyberpunk city with neon lights reflecting on wet streets')">Cyberpunk City</span>
+                    <span class="prompt-tag" onclick="setPrompt('A magical forest with glowing mushrooms and fireflies at twilight')">Magical Forest</span>
+                    <span class="prompt-tag" onclick="setPrompt('A steampunk airship floating above Victorian London')">Steampunk Scene</span>
+                    <span class="prompt-tag" onclick="setPrompt('A peaceful zen garden with cherry blossoms and a koi pond')">Zen Garden</span>
+                    <span class="prompt-tag" onclick="setPrompt('A space station orbiting a colorful nebula with distant stars')">Space Station</span>
+                    <span class="prompt-tag" onclick="setPrompt('A cozy cottage in a snowy mountain valley with warm light in windows')">Cozy Cottage</span>
+                </div>
+            </div>
+            
+            <!-- Output Section (Right) -->
+            <div class="output-section" id="outputSection">
+                <div class="output-placeholder" id="outputPlaceholder">
+                    <div class="output-placeholder-icon">🎨</div>
+                    <div class="output-placeholder-text">Your AI-generated image will appear here</div>
+                    <div class="output-placeholder-subtext">Enter a prompt and click "Generate Image" to begin</div>
+                </div>
+                
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p class="loading-text" id="loadingText">Initializing AI model...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="loading-steps">
+                        <div class="step" id="step1">
+                            <div class="step-icon">🧠</div>
+                            <div class="step-text">Processing</div>
+                        </div>
+                        <div class="step" id="step2">
+                            <div class="step-icon">🎨</div>
+                            <div class="step-text">Creating</div>
+                        </div>
+                        <div class="step" id="step3">
+                            <div class="step-icon">✨</div>
+                            <div class="step-text">Enhancing</div>
+                        </div>
+                        <div class="step" id="step4">
+                            <div class="step-icon">🖼️</div>
+                            <div class="step-text">Finalizing</div>
+                        </div>
+                    </div>
+                    <p class="loading-tip" id="loadingTip">AI is analyzing your prompt and generating pixels...</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+                
+                <div class="image-container" id="imageContainer">
+                    <img class="generated-image" id="generatedImage" alt="Generated image will appear here">
+                    <div class="image-actions">
+                        <button class="download-btn" id="downloadBtn">Download Image</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Using Pollinations API which is free and doesn't require API keys
+        const API_BASE_URL = "https://image.pollinations.ai/prompt/";
+        
+        const promptInput = document.getElementById('promptInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const sizeSelect = document.getElementById('sizeSelect');
+
+        function setPrompt(prompt) {
+            promptInput.value = prompt;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        async function generateImage() {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                showError('Please enter a prompt to generate an image');
+                return;
+            }
+
+            // Show loading state immediately
+            generateBtn.disabled = true;
+            loadingIndicator.style.display = 'block';
+            generatedImage.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            hideError();
+
+            // Start progress animation
+            startLoadingProgress();
+
+            try {
+                const size = sizeSelect.value;
+                const [width, height] = size.split('x');
+                
+                // Encode the prompt for URL
+                const encodedPrompt = encodeURIComponent(prompt);
+                
+                // Construct the API URL with parameters
+                const imageUrl = `${API_BASE_URL}${encodedPrompt}?width=${width}&height=${height}&model=flux&enhance=true&nologo=true`;
+                
+                // Create a new image element to test if the image loads
+                const testImg = new Image();
+                testImg.crossOrigin = 'anonymous';
+                
+                testImg.onload = function() {
+                    // Complete the progress
+                    completeProgress();
+                    
+                    setTimeout(() => {
+                        // Hide placeholder and show image
+                        document.getElementById('outputPlaceholder').style.display = 'none';
+                        document.getElementById('outputSection').classList.add('has-image');
+                        
+                        generatedImage.src = imageUrl;
+                        generatedImage.style.display = 'block';
+                        downloadBtn.style.display = 'inline-block';
+                        
+                        // Store the image URL for download
+                        downloadBtn.onclick = () => downloadImage(imageUrl, prompt);
+                        
+                        // Hide loading after showing image
+                        loadingIndicator.style.display = 'none';
+                        generateBtn.disabled = false;
+                    }, 500);
+                };
+                
+                testImg.onerror = function() {
+                    showError('Failed to generate image. Please try again with a different prompt.');
+                    loadingIndicator.style.display = 'none';
+                    document.getElementById('outputPlaceholder').style.display = 'flex';
+                    document.getElementById('outputSection').classList.remove('has-image');
+                    generateBtn.disabled = false;
+                    resetProgress();
+                };
+                
+                testImg.src = imageUrl;
+                
+            } catch (error) {
+                console.error('Error generating image:', error);
+                showError('An error occurred while generating the image. Please try again.');
+                loadingIndicator.style.display = 'none';
+                document.getElementById('outputPlaceholder').style.display = 'flex';
+                document.getElementById('outputSection').classList.remove('has-image');
+                generateBtn.disabled = false;
+                resetProgress();
+            }
+        }
+
+        function startLoadingProgress() {
+            const loadingText = document.getElementById('loadingText');
+            const progressFill = document.getElementById('progressFill');
+            const loadingTip = document.getElementById('loadingTip');
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+                document.getElementById('step4')
+            ];
+
+            const messages = [
+                'Initializing AI model...',
+                'Analyzing your prompt...',
+                'Generating base composition...',
+                'Adding details and textures...',
+                'Enhancing colors and lighting...',
+                'Applying final touches...',
+                'Almost ready...'
+            ];
+
+            const tips = [
+                'AI is analyzing your prompt and generating pixels...',
+                'Creating the basic structure of your image...',
+                'Adding intricate details and textures...',
+                'Perfecting colors and lighting effects...',
+                'Finalizing your masterpiece...'
+            ];
+
+            let progress = 0;
+            let messageIndex = 0;
+            let stepIndex = 0;
+            
+            // Reset all steps
+            steps.forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15 + 5; // Random progress between 5-20%
+                
+                if (progress > 95) {
+                    progress = 95; // Don't complete until image actually loads
+                }
+                
+                progressFill.style.width = progress + '%';
+                
+                // Update loading text
+                if (messageIndex < messages.length - 1 && progress > (messageIndex + 1) * 13) {
+                    messageIndex++;
+                    loadingText.textContent = messages[messageIndex];
+                }
+                
+                // Update tip
+                if (progress > 20 && progress < 40) {
+                    loadingTip.textContent = tips[1];
+                } else if (progress > 40 && progress < 60) {
+                    loadingTip.textContent = tips[2];
+                } else if (progress > 60 && progress < 80) {
+                    loadingTip.textContent = tips[3];
+                } else if (progress > 80) {
+                    loadingTip.textContent = tips[4];
+                }
+                
+                // Update steps
+                const currentStep = Math.floor(progress / 25);
+                if (currentStep > stepIndex && currentStep < steps.length) {
+                    if (stepIndex >= 0) {
+                        steps[stepIndex].classList.remove('active');
+                        steps[stepIndex].classList.add('completed');
+                    }
+                    stepIndex = currentStep;
+                    if (stepIndex < steps.length) {
+                        steps[stepIndex].classList.add('active');
+                    }
+                }
+                
+                if (progress >= 95) {
+                    clearInterval(progressInterval);
+                }
+            }, 200);
+            
+            // Store interval ID for cleanup
+            window.currentProgressInterval = progressInterval;
+        }
+
+        function completeProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const loadingText = document.getElementById('loadingText');
+            const loadingTip = document.getElementById('loadingTip');
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+                document.getElementById('step4')
+            ];
+            
+            if (window.currentProgressInterval) {
+                clearInterval(window.currentProgressInterval);
+            }
+            
+            progressFill.style.width = '100%';
+            loadingText.textContent = 'Image generated successfully!';
+            loadingTip.textContent = 'Your masterpiece is ready!';
+            
+            // Mark all steps as completed
+            steps.forEach(step => {
+                step.classList.remove('active');
+                step.classList.add('completed');
+            });
+        }
+
+        function resetProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const loadingText = document.getElementById('loadingText');
+            const loadingTip = document.getElementById('loadingTip');
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+                document.getElementById('step4')
+            ];
+            
+            if (window.currentProgressInterval) {
+                clearInterval(window.currentProgressInterval);
+            }
+            
+            progressFill.style.width = '0%';
+            loadingText.textContent = 'Initializing AI model...';
+            loadingTip.textContent = 'AI is analyzing your prompt and generating pixels...';
+            
+            steps.forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+        }
+
+        async function downloadImage(imageUrl, prompt) {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ai-generated-${prompt.substring(0, 30).replace(/[^a-z0-9]/gi, '-')}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading image:', error);
+                showError('Failed to download image. Please try right-clicking and saving manually.');
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generateImage);
+        
+        promptInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                generateImage();
+            }
+        });
+
+        // Auto-resize textarea
+        promptInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+    </script>
+</body>
+</html>
