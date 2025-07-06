@@ -2,6 +2,8 @@
 
 A web-based application that transforms text prompts into stunning AI-generated images using the Pollinations API.
 
+🔗 **Live Demo**: [https://genai-image-generation-89ek.vercel.app/](https://genai-image-generation-89ek.vercel.app/)
+
 ![AI Image Generator Screenshot](https://via.placeholder.com/800x500/667eea/ffffff?text=AI+Image+Generator+Screenshot)
 
 ## Features
@@ -14,6 +16,8 @@ A web-based application that transforms text prompts into stunning AI-generated 
 - 🎨 **Example Prompts**: Get inspired with ready-to-use prompt examples
 
 ## How to Use
+
+You can access the application here: [https://genai-image-generation-89ek.vercel.app/](https://genai-image-generation-89ek.vercel.app/)
 
 1. Enter a detailed description of the image you want to generate in the text area
 2. Select your preferred image size from the dropdown
@@ -32,26 +36,26 @@ A web-based application that transforms text prompts into stunning AI-generated 
 - **Frontend**: HTML5, CSS3, JavaScript
 - **API**: [Pollinations AI](https://pollinations.ai/) (free image generation API)
 - **Styling**: Custom CSS with responsive design and animations
+- **Hosting**: [Vercel](https://vercel.com/)
 
 ## Installation
 
-No installation required! This is a client-side only application. Simply:
-
+No installation required! You can:
+- Use the live version: [https://genai-image-generation-89ek.vercel.app/](https://genai-image-generation-89ek.vercel.app/)
+OR
 1. Download the `index.html` file
 2. Open it in any modern web browser
-
-Or use it directly by hosting the HTML file on any web server.
 
 ## Development
 
 To modify or extend this project:
 
 1. Clone or download the repository
-2. Edit the `genai_img_generation.html` file
+2. Edit the `index.html` file
    - Modify styles in the `<style>` section
    - Adjust JavaScript functionality in the `<script>` section
 3. Test your changes locally by opening the file in a browser
-4. Deploy the updated file to your web server
+4. Deploy to [Vercel](https://vercel.com/) or your preferred hosting service
 
 ### Customization Options
 
